@@ -6,11 +6,15 @@ const router = express.Router();
 
 router.get('/records', auth(), requireRole('employee'), async (req, res) => {
   try {
-    const r = await pool.query(
+    const filesQ = await pool.query(
+      "SELECT id, filename, created_at FROM files WHERE assigned_to=$1 ORDER BY created_at DESC",
+      [req.user.id]
+    );
+    const recQ = await pool.query(
       "SELECT r.id, r.data, r.status, r.reason, r.updated_at, f.id as file_id, f.filename, f.created_at as file_created_at FROM records r JOIN files f ON f.id=r.file_id WHERE r.employee_id=$1 ORDER BY r.created_at ASC",
       [req.user.id]
     );
-    res.json({ records: r.rows });
+    res.json({ files: filesQ.rows, records: recQ.rows });
   } catch {
     res.status(500).json({ error: 'failed' });
   }
