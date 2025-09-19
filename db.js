@@ -1,24 +1,33 @@
-/*const { Pool } = require('pg');
+import pg from "pg";
+import dotenv from "dotenv";
+dotenv.config();
 
-const pool = new Pool({
-  host: 'localhost',
-  user: 'postgres',
-  password: '9010@Gane',
-  database: 'postgres',
-  port: 5432
-});
-
-module.exports = pool; */
-
-require('dotenv').config();
-const { Pool } = require('pg');
-
-const pool = new Pool({
+export const pool = new pg.Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: {
-    rejectUnauthorized: false  
-  }
+  ssl: { rejectUnauthorized: false }
 });
 
-module.exports = pool;
+export async function one(q, params = []) {
+  const { rows } = await pool.query(q + " LIMIT 1", params);
+  return rows[0] || null;
+}
 
+export async function many(q, params = []) {
+  const { rows } = await pool.query(q, params);
+  return rows;
+}
+
+export async function tx(fn) {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const result = await fn(client);
+    await client.query("COMMIT");
+    return result;
+  } catch (e) {
+    await client.query("ROLLBACK");
+    throw e;
+  } finally {
+    client.release();
+  }
+}

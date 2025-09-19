@@ -1,40 +1,45 @@
-const express = require('express');
-const cors = require('cors');
+import express from "express";
+import cors from "cors";
+import cookieParser from "cookie-parser";
+import dotenv from "dotenv";
+
+import authRoutes from "./routes/authRoutes.js";
+import adminRoutes from "./routes/adminRoutes.js";
+import employeeRoutes from "./routes/employeeRoutes.js";
+
+dotenv.config();
 
 const app = express();
 
+const origins = (process.env.CORS_ORIGINS || "")
+  .split(",")
+  .map(s => s.trim())
+  .filter(Boolean);
+
 app.use(cors({
-  origin: process.env.CORS_ORIGINS ? process.env.CORS_ORIGINS.split(',') : '*',
-  credentials: true
+  origin: (origin, cb) => cb(null, origins.length ? origins : true),
+  credentials: true,
 }));
+app.use(express.json({ limit: "10mb" }));
+app.use(cookieParser());
 
-app.use(express.json());
+const router = express.Router();
 
-app.use('/api/upload', require('./routes/uploadRoutes'));
-app.use('/api/products', require('./routes/productRoutes'));
-app.use('/api/b2b-customers', require('./routes/b2bCustomerRoutes'));
-app.use('/api/b2c-customers', require('./routes/b2cCustomerRoutes'));
-app.use('/api/signup', require('./routes/b2cCustomerRoutes'));
-app.use('/api/auth', require('./routes/authRoutes'));
-app.use('/api/wishlist', require('./routes/wishlistRoutes'));
-app.use('/api/cart', require('./routes/cartRoutes'));
-app.use('/api/user', require('./routes/userRoutes'));
+router.get("/", (_req, res) => res.json({ ok: true, msg: "CHV backend ready" }));
+router.get("/health", (_req, res) => res.json({ ok: true }));
 
-app.get('/', (req, res) => res.status(200).send('Taras Kart API'));
-app.get('/healthz', (req, res) => res.status(200).send('ok'));
+router.use("/auth", authRoutes);
+router.use("/admin", adminRoutes);
+router.use("/employee", employeeRoutes);
 
-app.use((req, res) => res.status(404).send('Not found'));
+app.use("/", router);
+app.use("/api", router);
 
-
-app.get('/api/debug/blob-env', (req, res) => {
-  res.json({
-    hasToken: Boolean(
-      process.env.BLOB_READ_WRITE_TOKEN ||
-      process.env.VERCEL_BLOB_READ_WRITE_TOKEN ||
-      process.env.VERCEL_BLOB_RW_TOKEN
-    )
+const port = process.env.PORT || 4000;
+if (process.env.VERCEL !== "1") {
+  app.listen(port, () => {
+    console.log("Server listening on", port);
   });
-});
+}
 
-
-module.exports = app;
+export default app;
