@@ -25,18 +25,14 @@ app.use(cookieParser());
 
 const router = express.Router();
 
-// health route (no /api prefix inside the app)
+router.get("/", (_req, res) => res.json({ ok: true, msg: "CHV backend ready" }));
 router.get("/health", (_req, res) => res.json({ ok: true }));
 
-// your feature routes (no /api prefix inside the app)
 router.use("/auth", authRoutes);
 router.use("/admin", adminRoutes);
 router.use("/employee", employeeRoutes);
 
-// mount for Vercel (which strips /api)
 app.use("/", router);
-
-// ALSO mount under /api for local dev
 app.use("/api", router);
 
 export default app;
