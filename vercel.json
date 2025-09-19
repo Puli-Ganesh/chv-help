@@ -1,6 +1,9 @@
 {
   "version": 2,
   "rewrites": [
-    { "source": "/", "destination": "/api" }
-  ]
+    { "source": "/", "destination": "/api/health" }
+  ],
+  "functions": {
+    "api/**/*.js": { "runtime": "nodejs20.x", "maxDuration": 60, "memory": 1024 }
+  }
 }
