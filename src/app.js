@@ -1,3 +1,4 @@
+// D:\chv-final-backend\src\app.js
 import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
@@ -23,10 +24,19 @@ app.use(cors({
 app.use(express.json({ limit: "10mb" }));
 app.use(cookieParser());
 
-app.get("/api/health", (_req, res) => res.json({ ok: true }));
+// Define a router WITHOUT the /api prefix
+const router = express.Router();
 
-app.use("/api/auth", authRoutes);
-app.use("/api/admin", adminRoutes);
-app.use("/api/employee", employeeRoutes);
+router.get("/health", (_req, res) => res.json({ ok: true }));
+
+router.use("/auth", authRoutes);
+router.use("/admin", adminRoutes);
+router.use("/employee", employeeRoutes);
+
+// Mount it at "/" so Vercel (which strips /api) matches "/health"
+app.use("/", router);
+
+// Mount it at "/api" too so your local calls to /api/... still work
+app.use("/api", router);
 
 export default app;
