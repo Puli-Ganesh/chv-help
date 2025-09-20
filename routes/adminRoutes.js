@@ -27,6 +27,17 @@ router.post('/employees', auth(), requireRole('admin'), async (req, res) => {
   }
 });
 
+router.delete('/employees/:id', auth(), requireRole('admin'), async (req, res) => {
+  const { id } = req.params;
+  try {
+    const r = await pool.query("DELETE FROM users WHERE id=$1 AND role='employee' RETURNING id, username", [id]);
+    if (!r.rowCount) return res.status(404).send('Not found');
+    res.json({ ok: true, id: r.rows[0].id, username: r.rows[0].username });
+  } catch {
+    res.status(500).json({ error: 'failed' });
+  }
+});
+
 router.get('/dashboard', auth(), requireRole('admin'), async (req, res) => {
   try {
     const r = await pool.query(
